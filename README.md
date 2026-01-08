@@ -2,17 +2,18 @@
 
 Este proyecto recoge el diseño, implementación y análisis de una base de datos relacional orientada al estudio del uso de medios en proyectos y centros.
 
-No se trata únicamente de crear tablas y cargar datos, sino de construir un modelo coherente, normalizado y preparado para análisis, aplicando criterios propios de ingeniería de datos y analítica. El proyecto parte de datos reales en Excel, que han sido depurados y adaptados para su explotación en SQL.
+El trabajo cubre **todo el flujo de datos**, desde su origen en ficheros Excel, pasando por una fase de extracción y preparación mediante Python (Jupyter Notebook), hasta la carga, modelado y análisis en SQL. El objetivo no es únicamente almacenar datos, sino construir un modelo coherente, normalizado y preparado para análisis reales.
+
 
 ## Enfoque del proyecto
+He abordado el proyecto como un pipeline sencillo pero realista, similar al que podría encontrarse en un entorno profesional:
 
-He abordado este proyecto como lo haría en un entorno real:
+1. **Datos de origen en Excel**, con estructura heterogénea.
+2. **Extracción y preparación en Python**, utilizando un Jupyter Notebook.
+3. **Generación de ficheros `.txt` con sentencias SQL** para una carga controlada.
+4. **Modelado relacional y análisis exploratorio** directamente en base de datos.
 
-- Primero, entendiendo el **dominio del problema**.
-- Después, diseñando un **modelo relacional sólido**.
-- Finalmente, validando el modelo mediante **análisis exploratorio de datos (EDA)**.
-
-El objetivo no es solo que la base de datos funcione, sino que **permita responder preguntas relevantes** de forma consistente y escalable.
+Este enfoque permite desacoplar las distintas fases, controlar la calidad del dato y repetir el proceso de carga de forma consistente.
 
 
 ## Estructura del repositorio
@@ -20,84 +21,86 @@ El objetivo no es solo que la base de datos funcione, sino que **permita respond
 ├── 02.data.sql # Inserción de datos (simulados a partir de datos reales)
 ├── 03.EDA.sql # Consultas de análisis exploratorio
 ├── ERD.png # Diagrama Entidad–Relación
+├── data # incluye el jupyter, txt y excel 
 └── README.md # Documentación del proyecto
 
 
+## Origen y preparación de los datos
+### Excel como fuente de datos
+Los datos originales de medios proceden de ficheros Excel. Como ocurre habitualmente en este tipo de fuentes, los datos presentan inconsistencias de formato, valores nulos y relaciones implícitas que no son directamente cargables en una base de datos relacional.
+Por este motivo, el Excel se utiliza únicamente como **fuente de entrada**, no como origen directo de carga.
+
+### Extracción y transformación con Python
+La preparación de los datos se realiza en el notebook `Extraccion datos.ipynb`, donde:
+
+- Se leen los ficheros Excel.
+- Se depuran y normalizan los datos.
+- Se separa la información según las entidades del modelo.
+- Se generan distintos ficheros `.txt` con sentencias `INSERT`.
+
+Estos `.txt` actúan como **puente controlado** entre Excel y SQL, permitiendo revisar los datos antes de su carga y repetir el proceso sin intervención manual.
+
+
 ## Modelo de datos
-El modelo se basa en una separación clara entre:
+El modelo se ha diseñado siguiendo una separación clara entre entidades descriptivas y eventos.
+### Tablas descriptivas
 
-
-### Tablas descriptivas (dimensiones)
+- `centros`
+- `proveedores`
+- `categorias_medios`
+- `suministros_medios`
 - `medios`
 - `proyectos`
-- `centros`
-- `suministros_medios`
-- `proveedores`
-- `medio_atributos`
-- `categorias_medios`
 
-Estas tablas almacenan información estable y contextual.
+Estas tablas contienen información relativamente estable y evitan duplicidades mediante relaciones bien definidas.
 
-### Tabla de eventos (fact table)
+### Tabla de hechos
+
 - `uso_medios`
 
-La tabla `uso_medios` registra cada evento de uso de un medio en un proyecto durante un intervalo temporal. Desde ella se puede analizar:
+La tabla `uso_medios` actúa como **tabla de hechos**, registrando cada evento de uso de un medio en un proyecto dentro de un intervalo temporal (`fecha_inicio` y `fecha_fin`).  
+Desde esta tabla se pueden realizar análisis temporales, agregaciones y cruces entre centros, proyectos y medios sin redundancia de información.
 
-- Frecuencia de uso
-- Duración
-- Distribución por centro o ciudad
-- Relación entre proyectos y recursos utilizados
-
-Este enfoque evita duplicidades, mantiene una semántica clara y permite escalar el sistema añadiendo nuevas dimensiones sin necesidad de rediseñar el modelo.
-
-El diagrama completo puede consultarse en `ERD.png`.
+El diagrama Entidad–Relación completo se incluye en el archivo `ERD.png`.
 
 
 ## Decisiones de diseño
+Durante el desarrollo se han tomado decisiones orientadas a la coherencia y mantenibilidad del modelo:
 
-Algunas decisiones relevantes tomadas durante el desarrollo:
+- Uso de **claves artificiales** (`SERIAL`) como identificadores primarios.
+- Definición explícita de **claves foráneas** para garantizar integridad referencial.
+- Uso de **restricciones `CHECK`** para evitar incoherencias temporales (por ejemplo, fechas de fin anteriores a fechas de inicio).
+- Separación estricta entre datos descriptivos y eventos medibles.
+- Uso de Python como capa intermedia en lugar de cargas directas desde Excel.
 
-- Uso de **claves artificiales** para simplificar relaciones y evitar dependencias externas.
-- Definición explícita de **claves foráneas** para asegurar integridad referencial.
-- Restricciones `CHECK` para evitar incoherencias temporales (por ejemplo, fechas de fin anteriores a fechas de inicio).
-- Separación estricta entre entidades descriptivas y eventos medibles.
-- Modelo pensado para **análisis temporal y agregaciones**, no solo para almacenamiento.
-
-Estas decisiones priorizan la robustez del modelo y su utilidad analítica frente a soluciones más simples pero menos mantenibles.
-
+Estas decisiones priorizan la claridad del modelo y su utilidad analítica frente a soluciones más simples pero menos robustas.
 
 ## Análisis Exploratorio de Datos (EDA)
 
-El archivo `03.EDA.sql` contiene consultas orientadas a validar el modelo y extraer primeros insights, como:
+El archivo `03.EDA.sql` contiene consultas de análisis exploratorio orientadas a:
 
-- Uso de medios por centro y ciudad.
-- Proyectos con mayor consumo de recursos.
-- Duración media y distribución temporal de los usos.
-- Detección de posibles incoherencias o patrones anómalos.
+- Analizar el uso de medios por centro y ciudad.
+- Identificar proyectos con mayor consumo de recursos.
+- Estudiar la duración y frecuencia de los usos.
+- Validar la coherencia del modelo mediante agregaciones y cruces de tablas.
 
-El EDA se utiliza aquí como una herramienta de validación: si el modelo permite responder bien a estas preguntas, el diseño es correcto.
-
+El EDA se utiliza como una herramienta de validación del diseño: si el modelo permite responder a estas preguntas de forma clara, el diseño es correcto.
 
 ## Posibles extensiones
 
-El proyecto está preparado para crecer. Algunas extensiones naturales serían:
+El proyecto está preparado para evolucionar hacia:
 
-- Automatizar la carga de datos desde Excel o CSV mediante Python.
-- Crear vistas analíticas o materializadas.
-- Integrar el modelo con herramientas de BI.
-- Añadir auditoría de cambios o control de históricos.
-- Incorporar nuevas dimensiones sin modificar la tabla de hechos.
+- Automatización completa de la carga de datos desde Excel.
+- Sustitución de los `.txt` por cargas directas vía scripts.
+- Creación de vistas analíticas o materializadas.
+- Integración con herramientas de Business Intelligence.
+- Incorporación de históricos y auditoría de cambios.
 
 
 ## Tecnologías utilizadas
 
-- SQL (compatible con PostgreSQL)
+- SQL (PostgreSQL compatible)
+- Python (Jupyter Notebook)
+- Excel como fuente de datos
 - Modelado de bases de datos relacionales
 - Análisis Exploratorio de Datos (EDA)
-
-
-## Autor
-
-David Gómez Picazo  
-
-Proyecto desarrollado como parte de un trabajo académico y como base para portfolio técnico en SQL y análisis de datos.
