@@ -17,11 +17,12 @@ Este enfoque permite desacoplar las distintas fases, controlar la calidad del da
 
 
 ## Estructura del repositorio
+├── data # incluye el jupyter, txt y excel de donde se extraen los datos e insertan en 02.data.sql
 ├── 01.schema.sql # Definición del esquema relacional y restricciones
 ├── 02.data.sql # Inserción de datos (simulados a partir de datos reales)
 ├── 03.EDA.sql # Consultas de análisis exploratorio
-├── ERD.png # Diagrama Entidad–Relación
-├── data # incluye el jupyter, txt y excel 
+├── 04.ERD.pgerd # Esquema ERD de la BBDD
+├── 04.ERD.png # Imagen del esquema Entidad–Relación
 └── README.md # Documentación del proyecto
 
 
